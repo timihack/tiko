@@ -9,10 +9,15 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from app.core.appearance import DARK, Appearance
+from app.core.appearance import Appearance
+from app.core.clock import Clock, ClockFormat
+from app.core.settings import Settings
 from app.ui.clock_view import ClockView
+from app.ui.settings_view import SettingsView
 from app.ui.stopwatch_view import StopwatchView
 from app.ui.timer_view import TimerView
+
+_SETTINGS_INDEX = 3
 
 
 def _mode_button_stylesheet(appearance: Appearance) -> str:
@@ -26,21 +31,31 @@ def _mode_button_stylesheet(appearance: Appearance) -> str:
 
 
 class MainWindow(QMainWindow):
-    def __init__(self, appearance: Appearance | None = None):
+    def __init__(self, settings: Settings | None = None):
         super().__init__()
         self.setWindowTitle("Tiko")
         self.resize(800, 480)
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-        self.appearance = appearance or DARK
 
-        self._clock_view = ClockView(appearance=self.appearance)
+        self._settings = settings or Settings()
+
+        clock_format = self._settings.load_clock_format()
+        self.appearance = self._settings.load_appearance()
+        always_on_top = self._settings.load_always_on_top()
+
+        self._clock_view = ClockView(clock=Clock(clock_format), appearance=self.appearance)
         self._timer_view = TimerView(appearance=self.appearance)
         self._stopwatch_view = StopwatchView(appearance=self.appearance)
+        self._settings_view = SettingsView(clock_format, self.appearance, always_on_top)
+        self._settings_view.clock_format_changed.connect(self._on_clock_format_changed)
+        self._settings_view.appearance_changed.connect(self._on_appearance_changed)
+        self._settings_view.always_on_top_changed.connect(self._on_always_on_top_changed)
 
         self._stack = QStackedWidget()
         self._stack.addWidget(self._clock_view)
         self._stack.addWidget(self._timer_view)
         self._stack.addWidget(self._stopwatch_view)
+        self._stack.addWidget(self._settings_view)
 
         self._mode_buttons: list[QPushButton] = []
         mode_row = QHBoxLayout()
@@ -54,15 +69,32 @@ class MainWindow(QMainWindow):
             mode_row.addWidget(button)
             self._mode_buttons.append(button)
 
+        top_row = QHBoxLayout()
+        top_row.addStretch(1)
+        self._settings_button = QPushButton("\u2699")
+        self._settings_button.setFlat(True)
+        self._settings_button.setCheckable(True)
+        self._settings_button.clicked.connect(lambda: self._switch_mode(_SETTINGS_INDEX))
+        top_row.addWidget(self._settings_button)
+
         central = QWidget()
         central_layout = QVBoxLayout(central)
-        central_layout.setContentsMargins(0, 0, 0, 16)
+        central_layout.setContentsMargins(0, 8, 12, 16)
+        central_layout.addLayout(top_row)
         central_layout.addWidget(self._stack, 1)
         central_layout.addLayout(mode_row)
 
         self.setCentralWidget(central)
         self.apply_appearance(self.appearance)
-        self._switch_mode(0)
+
+        last_mode = self._settings.load_last_mode()
+        self._switch_mode(last_mode if last_mode in (0, 1, 2) else 0)
+
+        self.setWindowFlag(Qt.WindowType.WindowStaysOnTopHint, always_on_top)
+
+        geometry = self._settings.load_geometry()
+        if geometry:
+            self.restoreGeometry(geometry)
 
         self._fullscreen_shortcut = QShortcut(QKeySequence("F"), self)
         self._fullscreen_shortcut.activated.connect(self._toggle_fullscreen)
@@ -74,7 +106,7 @@ class MainWindow(QMainWindow):
         self.appearance = appearance
         self.setStyleSheet(f"background-color: {appearance.background_color};")
 
-        for button in self._mode_buttons:
+        for button in (*self._mode_buttons, self._settings_button):
             button.setStyleSheet(_mode_button_stylesheet(appearance))
 
         self._clock_view.apply_appearance(appearance)
@@ -85,6 +117,20 @@ class MainWindow(QMainWindow):
         self._stack.setCurrentIndex(index)
         for i, button in enumerate(self._mode_buttons):
             button.setChecked(i == index)
+        self._settings_button.setChecked(index == _SETTINGS_INDEX)
+
+    def _on_clock_format_changed(self, fmt: ClockFormat) -> None:
+        self._clock_view.apply_clock_format(fmt)
+        self._settings.save_clock_format(fmt)
+
+    def _on_appearance_changed(self, appearance: Appearance) -> None:
+        self.apply_appearance(appearance)
+        self._settings.save_appearance(appearance)
+
+    def _on_always_on_top_changed(self, value: bool) -> None:
+        self.setWindowFlag(Qt.WindowType.WindowStaysOnTopHint, value)
+        self.show()
+        self._settings.save_always_on_top(value)
 
     def _toggle_fullscreen(self) -> None:
         if self.isFullScreen():
@@ -95,3 +141,10 @@ class MainWindow(QMainWindow):
     def _exit_fullscreen(self) -> None:
         if self.isFullScreen():
             self.showNormal()
+
+    def closeEvent(self, event) -> None:
+        self._settings.save_geometry(self.saveGeometry())
+        current_index = self._stack.currentIndex()
+        if current_index in (0, 1, 2):
+            self._settings.save_last_mode(current_index)
+        super().closeEvent(event)

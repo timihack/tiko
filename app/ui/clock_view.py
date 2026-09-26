@@ -3,7 +3,7 @@ from PySide6.QtGui import QFont
 from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
 
 from app.core.appearance import DARK, Appearance
-from app.core.clock import Clock
+from app.core.clock import Clock, ClockFormat
 
 
 class ClockView(QWidget):
@@ -45,6 +45,10 @@ class ClockView(QWidget):
         date_font.setStyleHint(QFont.StyleHint.SansSerif)
         self._date_label.setFont(date_font)
         self._date_label.setStyleSheet(f"color: {appearance.secondary_text_color};")
+
+    def apply_clock_format(self, fmt: ClockFormat) -> None:
+        self.clock.format = fmt
+        self._refresh()
 
     def _refresh(self) -> None:
         self._time_label.setText(self.clock.time_string())
