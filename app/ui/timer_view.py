@@ -1,4 +1,4 @@
-from PySide6.QtCore import  Qt, QTimer
+from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
     QComboBox,
@@ -7,30 +7,34 @@ from PySide6.QtWidgets import (
     QPushButton,
     QSpinBox,
     QVBoxLayout,
-    QWidget
+    QWidget,
 )
 
+from app.core.appearance import DARK, Appearance
 from app.core.duration import format_duration
 from app.core.timer import CountdownTimer, TimerState
 
-_PRESET_MINUTES = [1, 5, 10, 25, 30, 46, 60]
+_PRESET_MINUTES = [1, 5, 10, 25, 30, 45, 60]
+
 
 class TimerView(QWidget):
-    def __init__(self, timer: CountdownTimer | None = None, parent=None):
+    def __init__(
+        self,
+        timer: CountdownTimer | None = None,
+        appearance: Appearance | None = None,
+        parent=None,
+    ):
         super().__init__(parent)
         self.timer = timer or CountdownTimer(_PRESET_MINUTES[0] * 60)
+        self.appearance = appearance or DARK
 
         self._display_label = QLabel(alignment=Qt.AlignmentFlag.AlignCenter)
-        display_font = QFont("Inter", 72, QFont.Weight.Bold)
-        display_font.setStyleHint(QFont.StyleHint.SansSerif)
-        self._display_label.setFont(display_font)
-        self._display_label.setStyleSheet("color:#F5F5F5;")
 
         self._duration_combo = QComboBox()
         for minutes in _PRESET_MINUTES:
             label = f"{minutes} minute" + ("s" if minutes != 1 else "")
             self._duration_combo.addItem(label, minutes)
-        self._duration_combo.addItem("Custom", None)
+        self._duration_combo.addItem("Custom…", None)
         self._duration_combo.currentIndexChanged.connect(self._on_preset_changed)
 
         self._custom_spinbox = QSpinBox()
@@ -67,7 +71,16 @@ class TimerView(QWidget):
         self._ticker.timeout.connect(self._refresh)
         self._ticker.start(1000)
 
+        self.apply_appearance(self.appearance)
         self._refresh()
+
+    def apply_appearance(self, appearance: Appearance) -> None:
+        self.appearance = appearance
+
+        display_font = QFont(appearance.font_family, appearance.time_font_size, QFont.Weight.Bold)
+        display_font.setStyleHint(QFont.StyleHint.SansSerif)
+        self._display_label.setFont(display_font)
+        self._display_label.setStyleSheet(f"color: {appearance.accent_color};")
 
     def _on_preset_changed(self, index: int) -> None:
         minutes = self._duration_combo.itemData(index)
@@ -111,11 +124,6 @@ class TimerView(QWidget):
             self._primary_button.setText("Start")
             self._primary_button.setEnabled(True)
 
-
         is_idle = self.timer.state is TimerState.IDLE
         self._duration_combo.setEnabled(is_idle)
         self._custom_spinbox.setEnabled(is_idle)
-
-
-
-

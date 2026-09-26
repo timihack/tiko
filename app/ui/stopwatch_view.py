@@ -2,20 +2,23 @@ from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
 
+from app.core.appearance import DARK, Appearance
 from app.core.duration import format_duration
 from app.core.stopwatch import Stopwatch, StopwatchState
 
 
 class StopwatchView(QWidget):
-    def __init__(self, stopwatch: Stopwatch | None = None, parent=None):
+    def __init__(
+        self,
+        stopwatch: Stopwatch | None = None,
+        appearance: Appearance | None = None,
+        parent=None,
+    ):
         super().__init__(parent)
         self.stopwatch = stopwatch or Stopwatch()
+        self.appearance = appearance or DARK
 
         self._display_label = QLabel(alignment=Qt.AlignmentFlag.AlignCenter)
-        display_font = QFont("Inter", 72, QFont.Weight.Bold)
-        display_font.setStyleHint(QFont.StyleHint.SansSerif)
-        self._display_label.setFont(display_font)
-        self._display_label.setStyleSheet("color: #F5F5F5;")
 
         self._primary_button = QPushButton("Start")
         self._primary_button.clicked.connect(self._on_primary_clicked)
@@ -38,7 +41,16 @@ class StopwatchView(QWidget):
         self._ticker.timeout.connect(self._refresh)
         self._ticker.start(1000)
 
+        self.apply_appearance(self.appearance)
         self._refresh()
+
+    def apply_appearance(self, appearance: Appearance) -> None:
+        self.appearance = appearance
+
+        display_font = QFont(appearance.font_family, appearance.time_font_size, QFont.Weight.Bold)
+        display_font.setStyleHint(QFont.StyleHint.SansSerif)
+        self._display_label.setFont(display_font)
+        self._display_label.setStyleSheet(f"color: {appearance.accent_color};")
 
     def _on_primary_clicked(self) -> None:
         if self.stopwatch.state is StopwatchState.RUNNING:

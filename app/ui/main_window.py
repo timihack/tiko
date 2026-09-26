@@ -9,31 +9,38 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from app.core.appearance import DARK, Appearance
 from app.ui.clock_view import ClockView
 from app.ui.stopwatch_view import StopwatchView
 from app.ui.timer_view import TimerView
 
-_MODE_BUTTON_STYLE = (
-    "QPushButton {"
-    " color: #757575; background: transparent; border: none;"
-    " padding: 4px 10px; font-size: 13px;"
-    "}"
-    "QPushButton:checked { color: #F5F5F5; font-weight: 600; }"
-)
+
+def _mode_button_stylesheet(appearance: Appearance) -> str:
+    return (
+        "QPushButton {"
+        f" color: {appearance.secondary_text_color}; background: transparent; border: none;"
+        " padding: 4px 10px; font-size: 13px;"
+        "}"
+        f"QPushButton:checked {{ color: {appearance.accent_color}; font-weight: 600; }}"
+    )
 
 
 class MainWindow(QMainWindow):
-    def __init__(self):
+    def __init__(self, appearance: Appearance | None = None):
         super().__init__()
         self.setWindowTitle("Tiko")
         self.resize(800, 480)
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-        self.setStyleSheet("background-color: #121212;")
+        self.appearance = appearance or DARK
+
+        self._clock_view = ClockView(appearance=self.appearance)
+        self._timer_view = TimerView(appearance=self.appearance)
+        self._stopwatch_view = StopwatchView(appearance=self.appearance)
 
         self._stack = QStackedWidget()
-        self._stack.addWidget(ClockView())
-        self._stack.addWidget(TimerView())
-        self._stack.addWidget(StopwatchView())
+        self._stack.addWidget(self._clock_view)
+        self._stack.addWidget(self._timer_view)
+        self._stack.addWidget(self._stopwatch_view)
 
         self._mode_buttons: list[QPushButton] = []
         mode_row = QHBoxLayout()
@@ -43,7 +50,6 @@ class MainWindow(QMainWindow):
             button = QPushButton(label)
             button.setFlat(True)
             button.setCheckable(True)
-            button.setStyleSheet(_MODE_BUTTON_STYLE)
             button.clicked.connect(lambda _checked, i=index: self._switch_mode(i))
             mode_row.addWidget(button)
             self._mode_buttons.append(button)
@@ -55,6 +61,7 @@ class MainWindow(QMainWindow):
         central_layout.addLayout(mode_row)
 
         self.setCentralWidget(central)
+        self.apply_appearance(self.appearance)
         self._switch_mode(0)
 
         self._fullscreen_shortcut = QShortcut(QKeySequence("F"), self)
@@ -63,17 +70,28 @@ class MainWindow(QMainWindow):
         self._exit_fullscreen_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Escape), self)
         self._exit_fullscreen_shortcut.activated.connect(self._exit_fullscreen)
 
+    def apply_appearance(self, appearance: Appearance) -> None:
+        self.appearance = appearance
+        self.setStyleSheet(f"background-color: {appearance.background_color};")
+
+        for button in self._mode_buttons:
+            button.setStyleSheet(_mode_button_stylesheet(appearance))
+
+        self._clock_view.apply_appearance(appearance)
+        self._timer_view.apply_appearance(appearance)
+        self._stopwatch_view.apply_appearance(appearance)
+
     def _switch_mode(self, index: int) -> None:
         self._stack.setCurrentIndex(index)
         for i, button in enumerate(self._mode_buttons):
             button.setChecked(i == index)
 
     def _toggle_fullscreen(self) -> None:
-      if self.isFullScreen():
-        self.showNormal()
-      else:
-        self.showFullScreen()
+        if self.isFullScreen():
+            self.showNormal()
+        else:
+            self.showFullScreen()
 
     def _exit_fullscreen(self) -> None:
-      if self.isFullScreen():
-        self.showNormal()
+        if self.isFullScreen():
+            self.showNormal()
