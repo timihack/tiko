@@ -21,9 +21,11 @@ class StopwatchView(QWidget):
         self._display_label = QLabel(alignment=Qt.AlignmentFlag.AlignCenter)
 
         self._primary_button = QPushButton("Start")
+        self._primary_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self._primary_button.clicked.connect(self._on_primary_clicked)
 
         self._reset_button = QPushButton("Reset")
+        self._reset_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self._reset_button.clicked.connect(self._on_reset_clicked)
 
         controls_row = QHBoxLayout()
@@ -51,6 +53,12 @@ class StopwatchView(QWidget):
         display_font.setStyleHint(QFont.StyleHint.SansSerif)
         self._display_label.setFont(display_font)
         self._display_label.setStyleSheet(f"color: {appearance.accent_color};")
+
+    def primary_action(self) -> None:
+        self._on_primary_clicked()
+
+    def reset(self) -> None:
+        self._on_reset_clicked()
 
     def _on_primary_clicked(self) -> None:
         if self.stopwatch.state is StopwatchState.RUNNING:

@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (
 from app.core.appearance import DARK, Appearance
 from app.core.duration import format_duration
 from app.core.timer import CountdownTimer, TimerState
+from app.ui.notifications import Notifier
 
 _PRESET_MINUTES = [1, 5, 10, 25, 30, 45, 60]
 
@@ -22,11 +23,14 @@ class TimerView(QWidget):
         self,
         timer: CountdownTimer | None = None,
         appearance: Appearance | None = None,
+        notifier: Notifier | None = None,
         parent=None,
     ):
         super().__init__(parent)
         self.timer = timer or CountdownTimer(_PRESET_MINUTES[0] * 60)
         self.appearance = appearance or DARK
+        self._notifier = notifier or Notifier(self)
+        self._has_notified_finished = False
 
         self._display_label = QLabel(alignment=Qt.AlignmentFlag.AlignCenter)
 
@@ -50,9 +54,11 @@ class TimerView(QWidget):
         duration_row.addWidget(self._custom_spinbox)
 
         self._primary_button = QPushButton("Start")
+        self._primary_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self._primary_button.clicked.connect(self._on_primary_clicked)
 
         self._reset_button = QPushButton("Reset")
+        self._reset_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self._reset_button.clicked.connect(self._on_reset_clicked)
 
         controls_row = QHBoxLayout()
@@ -82,6 +88,14 @@ class TimerView(QWidget):
         self._display_label.setFont(display_font)
         self._display_label.setStyleSheet(f"color: {appearance.accent_color};")
 
+    def primary_action(self) -> None:
+        if self.timer.is_finished:
+            return
+        self._on_primary_clicked()
+
+    def reset(self) -> None:
+        self._on_reset_clicked()
+
     def _on_preset_changed(self, index: int) -> None:
         minutes = self._duration_combo.itemData(index)
         is_custom = minutes is None
@@ -106,6 +120,7 @@ class TimerView(QWidget):
 
     def _on_reset_clicked(self) -> None:
         self.timer.reset()
+        self._has_notified_finished = False
         self._refresh()
 
     def _refresh(self) -> None:
@@ -114,6 +129,9 @@ class TimerView(QWidget):
         if self.timer.is_finished:
             self._primary_button.setText("Done")
             self._primary_button.setEnabled(False)
+            if not self._has_notified_finished:
+                self._has_notified_finished = True
+                self._notifier.notify("Tiko", "Timer finished")
         elif self.timer.state is TimerState.RUNNING:
             self._primary_button.setText("Pause")
             self._primary_button.setEnabled(True)
