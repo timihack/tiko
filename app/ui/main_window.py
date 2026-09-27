@@ -1,6 +1,7 @@
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QKeySequence, QShortcut
 from PySide6.QtWidgets import (
+    QApplication,
     QHBoxLayout,
     QMainWindow,
     QPushButton,
@@ -53,6 +54,11 @@ class MainWindow(QMainWindow):
         self._settings_view.clock_format_changed.connect(self._on_clock_format_changed)
         self._settings_view.appearance_changed.connect(self._on_appearance_changed)
         self._settings_view.always_on_top_changed.connect(self._on_always_on_top_changed)
+
+        self._notifier.open_requested.connect(self._on_tray_open)
+        self._notifier.start_timer_requested.connect(self._on_tray_start_timer)
+        self._notifier.pause_timer_requested.connect(self._on_tray_pause_timer)
+        self._notifier.quit_requested.connect(QApplication.instance().quit)
 
         self._stack = QStackedWidget()
         self._stack.addWidget(self._clock_view)
@@ -173,6 +179,23 @@ class MainWindow(QMainWindow):
             self._timer_view.reset()
         elif index == 2:
             self._stopwatch_view.reset()
+
+    def _on_tray_open(self) -> None:
+        if self.isMinimized():
+            self.showNormal()
+        self.show()
+        self.raise_()
+        self.activateWindow()
+
+    def _on_tray_start_timer(self) -> None:
+        self._switch_mode(1)
+        self._timer_view.start_or_resume()
+        self._on_tray_open()
+
+    def _on_tray_pause_timer(self) -> None:
+        self._switch_mode(1)
+        self._timer_view.pause()
+        self._on_tray_open()
 
     def _toggle_fullscreen(self) -> None:
         if self.isFullScreen():

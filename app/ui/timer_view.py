@@ -96,6 +96,19 @@ class TimerView(QWidget):
     def reset(self) -> None:
         self._on_reset_clicked()
 
+    def start_or_resume(self) -> None:
+        if self.timer.state is TimerState.IDLE:
+            self.timer.start()
+            self._refresh()
+        elif self.timer.state is TimerState.PAUSED:
+            self.timer.resume()
+            self._refresh()
+
+    def pause(self) -> None:
+        if self.timer.state is TimerState.RUNNING:
+            self.timer.pause()
+            self._refresh()
+
     def _on_preset_changed(self, index: int) -> None:
         minutes = self._duration_combo.itemData(index)
         is_custom = minutes is None
