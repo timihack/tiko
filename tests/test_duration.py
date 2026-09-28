@@ -27,3 +27,11 @@ def test_negative_values_clamp_to_zero():
 
 def test_rounds_fractional_seconds():
     assert format_duration(59.6) == "01:00"
+
+
+def test_exactly_one_hour():
+    assert format_duration(3600) == "1:00:00"
+
+
+def test_just_under_one_hour():
+    assert format_duration(3599) == "59:59"

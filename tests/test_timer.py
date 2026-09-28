@@ -122,3 +122,52 @@ def test_set_duration_rejects_non_positive_value():
 def test_constructor_rejects_non_positive_duration():
     with pytest.raises(ValueError):
         CountdownTimer(0, time_source=FakeClock())
+
+
+def test_multiple_pause_resume_cycles_accumulate_correctly():
+    clock = FakeClock()
+    timer = CountdownTimer(60, time_source=clock)
+    timer.start()
+    clock.advance(5)
+    timer.pause()
+    clock.advance(100)
+    timer.resume()
+    clock.advance(5)
+    timer.pause()
+    clock.advance(100)
+    timer.resume()
+    clock.advance(5)
+    assert timer.remaining() == 45
+
+
+def test_reset_while_paused_returns_to_idle_with_full_duration():
+    clock = FakeClock()
+    timer = CountdownTimer(60, time_source=clock)
+    timer.start()
+    clock.advance(20)
+    timer.pause()
+    timer.reset()
+    assert timer.state is TimerState.IDLE
+    assert timer.remaining() == 60
+
+
+def test_set_duration_raises_while_paused():
+    clock = FakeClock()
+    timer = CountdownTimer(60, time_source=clock)
+    timer.start()
+    timer.pause()
+    with pytest.raises(RuntimeError):
+        timer.set_duration(120)
+
+
+def test_timer_can_run_again_after_reset_following_completion():
+    clock = FakeClock()
+    timer = CountdownTimer(10, time_source=clock)
+    timer.start()
+    clock.advance(50)
+    assert timer.is_finished
+    timer.reset()
+    assert not timer.is_finished
+    timer.start()
+    clock.advance(4)
+    assert timer.remaining() == 6

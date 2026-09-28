@@ -6,35 +6,50 @@ FIXED_MOMENT = dt.datetime(2026, 9, 25, 14, 5, 9)
 
 
 def test_format_time_24_hour_with_seconds():
-  fmt = ClockFormat(use_24_hour=True, show_seconds=True)
-  assert format_time(FIXED_MOMENT, fmt) == "14:05:09"
+    fmt = ClockFormat(use_24_hour=True, show_seconds=True)
+    assert format_time(FIXED_MOMENT, fmt) == "14:05:09"
+
 
 def test_format_time_24_hour_without_seconds():
-  fmt = ClockFormat(use_24_hour=True, show_seconds=False)
-  assert format_time(FIXED_MOMENT, fmt) == "14:05"
- 
- 
+    fmt = ClockFormat(use_24_hour=True, show_seconds=False)
+    assert format_time(FIXED_MOMENT, fmt) == "14:05"
+
+
 def test_format_time_12_hour_with_seconds():
-  fmt = ClockFormat(use_24_hour=False, show_seconds=True)
-  assert format_time(FIXED_MOMENT, fmt) == "02:05:09 PM"
+    fmt = ClockFormat(use_24_hour=False, show_seconds=True)
+    assert format_time(FIXED_MOMENT, fmt) == "02:05:09 PM"
 
 
 def test_format_time_12_hour_without_seconds():
-  fmt = ClockFormat(use_24_hour=False, show_seconds=False)
-  assert format_time(FIXED_MOMENT, fmt) == "02:05 PM"
+    fmt = ClockFormat(use_24_hour=False, show_seconds=False)
+    assert format_time(FIXED_MOMENT, fmt) == "02:05 PM"
 
 
 def test_format_date():
-  assert format_date(FIXED_MOMENT) == "Friday, September 25"
+    assert format_date(FIXED_MOMENT) == "Friday, September 25"
 
 
 def test_default_format_matches_first_run_defaults():
-  fmt = ClockFormat()
-  assert fmt.use_24_hour is False
-  assert fmt.show_seconds is True
-  assert fmt.show_date is False
+    fmt = ClockFormat()
+    assert fmt.use_24_hour is False
+    assert fmt.show_seconds is True
+    assert fmt.show_date is False
+
 
 def test_clock_uses_injected_time_source():
-  clock = Clock(ClockFormat(use_24_hour=True, show_seconds=True), time_source=lambda: FIXED_MOMENT)
-  assert clock.time_string() == "14:05:09"
-  assert clock.date_string() == "Friday, September 25"
+    clock = Clock(ClockFormat(use_24_hour=True, show_seconds=True), time_source=lambda: FIXED_MOMENT)
+    assert clock.time_string() == "14:05:09"
+    assert clock.date_string() == "Friday, September 25"
+
+
+def test_twelve_hour_format_at_midnight_and_noon():
+    fmt = ClockFormat(use_24_hour=False, show_seconds=True)
+    midnight = dt.datetime(2026, 9, 25, 0, 5, 9)
+    noon = dt.datetime(2026, 9, 25, 12, 5, 9)
+    assert format_time(midnight, fmt) == "12:05:09 AM"
+    assert format_time(noon, fmt) == "12:05:09 PM"
+
+
+def test_twenty_four_hour_format_at_midnight():
+    fmt = ClockFormat(use_24_hour=True, show_seconds=False)
+    assert format_time(dt.datetime(2026, 9, 25, 0, 0, 0), fmt) == "00:00"

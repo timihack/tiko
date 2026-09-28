@@ -46,8 +46,12 @@ def theme_by_name(name: str) -> Appearance:
         raise ValueError(f"unknown theme: {name!r}") from exc
 
 
+def is_valid_accent(color: str) -> bool:
+    return color.startswith("#") and len(color) == 7
+
+
 def with_accent(appearance: Appearance, accent_color: str) -> Appearance:
-    if not accent_color.startswith("#") or len(accent_color) != 7:
+    if not is_valid_accent(accent_color):
         raise ValueError(f"accent_color must be a '#rrggbb' hex string, got {accent_color!r}")
     return replace(appearance, accent_color=accent_color)
 

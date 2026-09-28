@@ -6,6 +6,7 @@ from app.core.appearance import (
     AVAILABLE_FONTS,
     THEMES,
     Appearance,
+    is_valid_accent,
     theme_by_name,
     with_accent,
     with_font,
@@ -41,10 +42,12 @@ class Settings:
         appearance = with_font(base, font_family) if font_family in AVAILABLE_FONTS else base
 
         accent = str(self._settings.value("appearance/accent_color", appearance.accent_color, type=str))
-        appearance = with_accent(appearance, accent)
+        if is_valid_accent(accent):
+            appearance = with_accent(appearance, accent)
 
         time_font_size = int(self._settings.value("appearance/time_font_size", appearance.time_font_size, type=int))
-        appearance = with_time_font_size(appearance, time_font_size)
+        if time_font_size > 0:
+            appearance = with_time_font_size(appearance, time_font_size)
 
         return appearance
 

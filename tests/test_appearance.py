@@ -57,3 +57,10 @@ def test_with_time_font_size_overrides_only_size():
 def test_with_time_font_size_rejects_non_positive():
     with pytest.raises(ValueError):
         with_time_font_size(DARK, 0)
+
+
+def test_with_accent_rejects_wrong_length_hex():
+    with pytest.raises(ValueError):
+        with_accent(DARK, "#12345")
+    with pytest.raises(ValueError):
+        with_accent(DARK, "#1234567")

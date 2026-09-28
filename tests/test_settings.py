@@ -65,3 +65,33 @@ def test_settings_survive_a_simulated_restart(tmp_path):
 
     second = Settings(QSettings(str(path), QSettings.Format.IniFormat))
     assert second.load_clock_format() == fmt
+
+
+def test_unknown_stored_theme_falls_back_to_dark(tmp_path):
+    backend = QSettings(str(tmp_path / "settings.ini"), QSettings.Format.IniFormat)
+    backend.setValue("appearance/theme_name", "DoesNotExist")
+    assert Settings(backend).load_appearance().theme_name == "Dark"
+
+
+def test_unknown_stored_font_falls_back_to_default_font(tmp_path):
+    backend = QSettings(str(tmp_path / "settings.ini"), QSettings.Format.IniFormat)
+    backend.setValue("appearance/font_family", "Comic Sans MS")
+    assert Settings(backend).load_appearance().font_family == "Inter"
+
+
+def test_invalid_stored_accent_color_falls_back_to_theme_default(tmp_path):
+    backend = QSettings(str(tmp_path / "settings.ini"), QSettings.Format.IniFormat)
+    backend.setValue("appearance/accent_color", "not-a-color")
+    assert Settings(backend).load_appearance().accent_color == DARK.accent_color
+
+
+def test_non_positive_stored_font_size_falls_back_to_default(tmp_path):
+    backend = QSettings(str(tmp_path / "settings.ini"), QSettings.Format.IniFormat)
+    backend.setValue("appearance/time_font_size", 0)
+    assert Settings(backend).load_appearance().time_font_size == DARK.time_font_size
+
+
+def test_non_numeric_stored_font_size_falls_back_to_default(tmp_path):
+    backend = QSettings(str(tmp_path / "settings.ini"), QSettings.Format.IniFormat)
+    backend.setValue("appearance/time_font_size", "huge")
+    assert Settings(backend).load_appearance().time_font_size == DARK.time_font_size
