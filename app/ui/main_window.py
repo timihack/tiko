@@ -91,7 +91,7 @@ class MainWindow(QMainWindow):
         self._settings_button.setFlat(True)
         self._settings_button.setCheckable(True)
         self._settings_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self._settings_button.clicked.connect(lambda: self._switch_mode(_SETTINGS_INDEX))
+        self._settings_button.clicked.connect(self._toggle_settings)
         top_row.addWidget(self._settings_button)
 
         central = QWidget()
@@ -160,6 +160,12 @@ class MainWindow(QMainWindow):
         if self._stack.currentIndex() == _SETTINGS_INDEX:
             return
         self._switch_mode(index)
+
+    def _toggle_settings(self) -> None:
+        if self._stack.currentIndex() == _SETTINGS_INDEX:
+            self._switch_mode(self._last_content_mode)
+        else:
+            self._switch_mode(_SETTINGS_INDEX)
 
     def _on_clock_format_changed(self, fmt: ClockFormat) -> None:
         self._clock_view.apply_clock_format(fmt)
