@@ -5,7 +5,7 @@ from dataclasses import dataclass, replace
 AVAILABLE_FONTS = ("Inter", "JetBrains Mono", "IBM Plex Mono", "Roboto Mono")
 
 ACCENT_COLORS = {
-    "Teal": "#14B8A6",
+    "Teal": "#0D9488",
     "Amber": "#D97706",
     "Coral": "#DC2626",
 }
@@ -15,6 +15,9 @@ ACCENT_COLORS = {
 class Appearance:
     theme_name: str
     background_color: str
+    surface_color: str
+    border_color: str
+    text_color: str
     secondary_text_color: str
     accent_color: str
     font_family: str = "Inter"
@@ -25,6 +28,9 @@ class Appearance:
 DARK = Appearance(
     theme_name="Dark",
     background_color="#121212",
+    surface_color="#1E1E1E",
+    border_color="#3A3A3A",
+    text_color="#E0E0E0",
     secondary_text_color="#9E9E9E",
     accent_color="#F5F5F5",
 )
@@ -32,6 +38,9 @@ DARK = Appearance(
 LIGHT = Appearance(
     theme_name="Light",
     background_color="#FAFAFA",
+    surface_color="#FFFFFF",
+    border_color="#CFCFCF",
+    text_color="#212121",
     secondary_text_color="#616161",
     accent_color="#212121",
 )

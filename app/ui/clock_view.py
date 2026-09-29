@@ -4,6 +4,7 @@ from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
 
 from app.core.appearance import DARK, Appearance
 from app.core.clock import Clock, ClockFormat
+from app.ui.fitted_label import FittedLabel
 
 
 class ClockView(QWidget):
@@ -17,14 +18,15 @@ class ClockView(QWidget):
         self.clock = clock or Clock()
         self.appearance = appearance or DARK
 
-        self._time_label = QLabel(alignment=Qt.AlignmentFlag.AlignCenter)
+        self._time_label = FittedLabel()
         self._date_label = QLabel(alignment=Qt.AlignmentFlag.AlignCenter)
 
         layout = QVBoxLayout(self)
-        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.setSpacing(12)
+        layout.addStretch(1)
         layout.addWidget(self._time_label)
         layout.addWidget(self._date_label)
+        layout.addStretch(1)
 
         self._timer = QTimer(self)
         self._timer.timeout.connect(self._refresh)
@@ -38,7 +40,7 @@ class ClockView(QWidget):
 
         time_font = QFont(appearance.font_family, appearance.time_font_size, QFont.Weight.Bold)
         time_font.setStyleHint(QFont.StyleHint.SansSerif)
-        self._time_label.setFont(time_font)
+        self._time_label.set_display_font(time_font)
         self._time_label.setStyleSheet(f"color: {appearance.accent_color};")
 
         date_font = QFont(appearance.font_family, appearance.secondary_font_size)

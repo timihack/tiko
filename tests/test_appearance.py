@@ -1,6 +1,7 @@
 import pytest
 
 from app.core.appearance import (
+    ACCENT_COLORS,
     DARK,
     LIGHT,
     with_accent,
@@ -64,3 +65,33 @@ def test_with_accent_rejects_wrong_length_hex():
         with_accent(DARK, "#12345")
     with pytest.raises(ValueError):
         with_accent(DARK, "#1234567")
+
+
+def _luminance(hex_color):
+    hex_color = hex_color.lstrip("#")
+    channels = [int(hex_color[i : i + 2], 16) / 255 for i in (0, 2, 4)]
+    linear = [c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4 for c in channels]
+    return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2]
+
+
+def contrast_ratio(foreground, background):
+    lighter, darker = sorted((_luminance(foreground), _luminance(background)), reverse=True)
+    return (lighter + 0.05) / (darker + 0.05)
+
+
+@pytest.mark.parametrize("theme", [DARK, LIGHT], ids=["dark", "light"])
+@pytest.mark.parametrize("name, color", sorted(ACCENT_COLORS.items()))
+def test_accent_presets_are_readable_as_large_text_on_every_theme(theme, name, color):
+    assert contrast_ratio(color, theme.background_color) >= 3.0, f"{name} on {theme.theme_name}"
+
+
+@pytest.mark.parametrize("theme", [DARK, LIGHT], ids=["dark", "light"])
+def test_ui_text_meets_normal_text_contrast_on_every_surface(theme):
+    assert contrast_ratio(theme.text_color, theme.background_color) >= 4.5
+    assert contrast_ratio(theme.text_color, theme.surface_color) >= 4.5
+    assert contrast_ratio(theme.secondary_text_color, theme.background_color) >= 4.5
+
+
+@pytest.mark.parametrize("theme", [DARK, LIGHT], ids=["dark", "light"])
+def test_default_accent_is_readable_as_large_text(theme):
+    assert contrast_ratio(theme.accent_color, theme.background_color) >= 3.0

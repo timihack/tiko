@@ -3,6 +3,8 @@ from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
     QFormLayout,
+    QFrame,
+    QScrollArea,
     QSpinBox,
     QVBoxLayout,
     QWidget,
@@ -76,6 +78,8 @@ class SettingsView(QWidget):
         self._always_on_top_checkbox.toggled.connect(self.always_on_top_changed)
 
         form = QFormLayout()
+        form.setVerticalSpacing(10)
+        form.setLabelAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
         form.addRow("Time format", self._time_format_combo)
         form.addRow(self._seconds_checkbox)
         form.addRow(self._date_checkbox)
@@ -85,10 +89,28 @@ class SettingsView(QWidget):
         form.addRow("Clock color", self._accent_combo)
         form.addRow(self._always_on_top_checkbox)
 
+        form_container = QWidget()
+        form_container.setLayout(form)
+        form_container.setMinimumWidth(320)
+        form_container.setMaximumWidth(460)
+
+        page = QWidget()
+        page_layout = QVBoxLayout(page)
+        page_layout.setContentsMargins(24, 16, 24, 16)
+        page_layout.addWidget(
+            form_container,
+            alignment=Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter,
+        )
+
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.Shape.NoFrame)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        scroll.setWidget(page)
+
         layout = QVBoxLayout(self)
-        layout.setAlignment(Qt.AlignmentFlag.AlignTop)
-        layout.setContentsMargins(48, 32, 48, 32)
-        layout.addLayout(form)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(scroll)
 
     def _on_clock_format_changed(self, *_args) -> None:
         fmt = ClockFormat(

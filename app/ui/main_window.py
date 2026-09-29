@@ -1,5 +1,5 @@
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QKeySequence, QShortcut
+from PySide6.QtGui import QFont, QFontMetrics, QKeySequence, QShortcut
 from PySide6.QtWidgets import (
     QApplication,
     QHBoxLayout,
@@ -17,18 +17,20 @@ from app.ui.clock_view import ClockView
 from app.ui.notifications import Notifier
 from app.ui.settings_view import SettingsView
 from app.ui.stopwatch_view import StopwatchView
+from app.ui.styles import build_palette, build_stylesheet
 from app.ui.timer_view import TimerView
 
 _SETTINGS_INDEX = 3
 
 
-def _mode_button_stylesheet(appearance: Appearance) -> str:
+def _mode_button_stylesheet(appearance: Appearance, font_px: int = 13) -> str:
     return (
         "QPushButton {"
         f" color: {appearance.secondary_text_color}; background: transparent; border: none;"
-        " padding: 4px 10px; font-size: 13px;"
+        f" padding: 4px 10px; font-size: {font_px}px;"
         "}"
-        f"QPushButton:checked {{ color: {appearance.accent_color}; font-weight: 600; }}"
+        f"QPushButton:hover {{ color: {appearance.text_color}; }}"
+        f"QPushButton:checked {{ color: {appearance.text_color}; font-weight: 600; }}"
     )
 
 
@@ -70,11 +72,15 @@ class MainWindow(QMainWindow):
         mode_row = QHBoxLayout()
         mode_row.setAlignment(Qt.AlignmentFlag.AlignCenter)
         mode_row.setSpacing(24)
+        bold_font = QFont(self.font().family(), weight=QFont.Weight.DemiBold)
+        bold_font.setPixelSize(13)
+        bold_metrics = QFontMetrics(bold_font)
         for index, label in enumerate(("Clock", "Timer", "Stopwatch")):
             button = QPushButton(label)
             button.setFlat(True)
             button.setCheckable(True)
             button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+            button.setMinimumWidth(bold_metrics.horizontalAdvance(label) + 20)
             button.clicked.connect(lambda _checked, i=index: self._switch_mode(i))
             mode_row.addWidget(button)
             self._mode_buttons.append(button)
@@ -131,10 +137,12 @@ class MainWindow(QMainWindow):
 
     def apply_appearance(self, appearance: Appearance) -> None:
         self.appearance = appearance
-        self.setStyleSheet(f"background-color: {appearance.background_color};")
+        self.setPalette(build_palette(appearance))
+        self.setStyleSheet(build_stylesheet(appearance))
 
-        for button in (*self._mode_buttons, self._settings_button):
+        for button in self._mode_buttons:
             button.setStyleSheet(_mode_button_stylesheet(appearance))
+        self._settings_button.setStyleSheet(_mode_button_stylesheet(appearance, font_px=20))
 
         self._clock_view.apply_appearance(appearance)
         self._timer_view.apply_appearance(appearance)
