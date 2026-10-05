@@ -3,6 +3,12 @@ __pycache__/
 *.pyc
 dist/
 build/
-*.egg-info/
 *.spec
+!tiko.spec
 .env
+*.egg-info/
+*.AppImage
+*.deb
+Tiko.AppDir/
+deb/
+squashfs-root/

@@ -14,6 +14,7 @@ from app.core.appearance import Appearance
 from app.core.clock import Clock, ClockFormat
 from app.core.settings import Settings
 from app.ui.clock_view import ClockView
+from app.ui.icon import generate_icon
 from app.ui.notifications import Notifier
 from app.ui.settings_view import SettingsView
 from app.ui.stopwatch_view import StopwatchView
@@ -40,6 +41,7 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("Tiko")
         self.resize(800, 480)
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        self.setWindowIcon(generate_icon())
 
         self._settings = settings or Settings()
 
